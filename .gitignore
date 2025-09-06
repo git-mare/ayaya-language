@@ -1,0 +1,23 @@
+# Build folders
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/Makefile
+/*.o
+/*.exe
+/*.out
+
+# VSCode / IDE files
+.vscode/
+*.user
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Compiled headers
+*.gch
+
+# Logs
+*.log
