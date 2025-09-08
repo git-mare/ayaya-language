@@ -5,4 +5,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-add_executable(ayaya_test ${SOURCES})
+add_executable(aya ${SOURCES})

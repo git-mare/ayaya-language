@@ -21,4 +21,5 @@ ayaya-lang/
 ......test_wondering.aya
 ...build/
 ...CMakeLists.txt
+...Notes.md
 ...README.md
