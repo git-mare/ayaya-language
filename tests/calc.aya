@@ -1,0 +1,32 @@
+// Defining the values and the desired operation
+omae wa num1 = 15.5
+omae wa num2 = 4
+omae wa operation = "*"
+
+omae wa result = 0
+
+// Calculator logic
+wondering (operation == "+") {
+    result = num1 + num2
+}
+
+wondering (operation == "-") {
+    result = num1 - num2
+}
+
+wondering (operation == "*") {
+    result = num1 * num2
+}
+
+wondering (operation == "/") {
+    // Prevent division by zero
+    wondering (num2 != 0) {
+        result = num1 / num2
+    }
+    wondering (num2 == 0) {
+        show("Error: Division by zero!")
+    }
+}
+
+show("The calculation of " + num1 + " " + operation + " " + num2 + " is:")
+show(result)

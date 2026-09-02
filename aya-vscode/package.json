@@ -1,0 +1,33 @@
+{
+  "name": "aya-lang",
+  "displayName": "Aya",
+  "description": "AyaLang Support",
+  "version": "1.0.0",
+  "publisher": "git-mare",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Programming Languages"],
+  "icon": "icons/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/git-mare/ayaya-language"
+  },
+  "contributes": {
+    "languages": [{
+      "id": "aya",
+      "aliases": ["Aya", "aya"],
+      "extensions": [".aya"],
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "light": "./icons/nooutline.png",
+        "dark": "./icons/nooutline.png"
+      }
+    }],
+    "grammars": [{
+      "language": "aya",
+      "scopeName": "source.aya",
+      "path": "./syntaxes/aya.tmLanguage.json"
+    }]
+  }
+}

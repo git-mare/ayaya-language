@@ -1,0 +1,21 @@
+x = 10
+y = 5
+
+omae wa language = "AyaLang"
+omae wa version = 1.5
+omae wa is_active = true
+
+show(language + " is running: " + is_active)
+
+wondering (x > y) {
+    show("x > y: " + x)
+}
+
+// math mixing types (int and float)
+omae wa calc = x * version
+show("Result: " + calc)
+
+// conditionals with truth values (truthy)
+wondering (language) {
+    show("String evaluates to true!")
+}

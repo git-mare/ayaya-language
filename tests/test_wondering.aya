@@ -1,0 +1,14 @@
+x = 10
+y = 5
+
+wondering (x > y) {
+    show(x)
+}
+
+wondering (y < x) {
+    show(y)
+}
+
+wondering (x + y == 15) {
+    show(x + y)
+}

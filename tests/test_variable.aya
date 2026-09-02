@@ -1,0 +1,5 @@
+omae wa title = "Ayaya"
+omae wa version = 1.5
+omae wa is_cool = true
+
+show("Linguagem " + title + " v" + version)
