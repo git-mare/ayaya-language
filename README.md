@@ -1,6 +1,3 @@
-Aqui está o seu `README.md` com a seção do dicionário atualizada para incluir a nova sintaxe de declaração de variáveis (`omae wa`) e os valores booleanos que implementamos recentemente:
-
-```markdown
 # Ayaya Lang
 A small programming language that I'm developing (for fun)
 ---
