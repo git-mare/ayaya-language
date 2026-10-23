@@ -2,3 +2,4 @@
 x = 5
 y = 10
 show(x * y)
+show(x / y)

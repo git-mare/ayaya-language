@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <vector>
 #include <map>
 
 class Node {
@@ -48,6 +49,15 @@ public:
         : left(l), op(o), right(r) {}
 };
 
+class UnaryOpNode : public Node {
+public:
+    std::string op;
+    std::shared_ptr<Node> operand;
+
+    UnaryOpNode(const std::string& o, std::shared_ptr<Node> e)
+        : op(o), operand(e) {}
+};
+
 class AssignNode : public Node {
 public:
     std::string name;
@@ -65,7 +75,9 @@ class WonderingNode : public Node {
 public:
     std::shared_ptr<Node> condition;
     std::vector<std::shared_ptr<Node>> body;
+    std::vector<std::shared_ptr<Node>> else_body;
 
-    WonderingNode(std::shared_ptr<Node> cond, const std::vector<std::shared_ptr<Node>>& b)
-        : condition(cond), body(b) {}
+    WonderingNode(std::shared_ptr<Node> cond, const std::vector<std::shared_ptr<Node>>& b,
+                  const std::vector<std::shared_ptr<Node>>& e = {})
+        : condition(cond), body(b), else_body(e) {}
 };

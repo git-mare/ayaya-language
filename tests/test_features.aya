@@ -1,0 +1,39 @@
+// New language features
+
+ur x = 10
+ur y = 4
+
+// Negative numbers and unary minus
+ur temp = -5
+show(temp)
+
+// Logical operators
+wondering (x > 5 && y < 5) {
+    show("logical and works")
+}
+
+wondering (x < 5 || y == 4) {
+    show("logical or works")
+}
+
+wondering (!(x < 0)) {
+    show("logical not works")
+}
+
+// Division returns decimals
+show(5 / 2)
+
+// Comparison with arithmetic on both sides (precedence)
+wondering (x == 5 + 5) {
+    show("precedence ok")
+}
+
+// else and else-if
+ur n = 3
+wondering (n > 5) {
+    show("big")
+} actually (n > 2) {
+    show("medium")
+} nah {
+    show("small")
+}

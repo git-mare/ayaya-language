@@ -1,5 +1,6 @@
-omae wa title = "Ayaya"
-omae wa version = 1.5
-omae wa is_cool = true
+ur title = "Ayaya"
+ur version = 1.5
+ur is_cool = legit
 
 show("Linguagem " + title + " v" + version)
+show(is_cool)

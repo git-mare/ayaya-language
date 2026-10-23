@@ -1,0 +1,27 @@
+// grade.aya
+// Classifies a student's grade based on their score.
+
+ur score = 7.5
+ur max_score = 10
+ur percentage = (score / max_score) * 100
+
+show("Score: " + score + "/" + max_score)
+show("Percentage: " + percentage + "%")
+
+// Classification logic
+wondering (score >= 9) {
+    show("Grade: A - Excellent!")
+} actually (score >= 7) {
+    show("Grade: B - Good job!")
+} actually (score >= 5) {
+    show("Grade: C - Needs improvement.")
+} nah {
+    show("Grade: F - Failed.")
+}
+
+// Final result
+wondering (score >= 5) {
+    show("Result: PASSED")
+} nah {
+    show("Result: FAILED")
+}

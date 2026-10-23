@@ -1,11 +1,17 @@
 #include "Parser.h"
 #include <stdexcept>
+#include <utility>
 
 Parser::Parser(const std::vector<Token>& t) : tokens(t), pos(0), current_token(t[0]) {}
 
 void Parser::advance() {
     pos++;
     if (pos < tokens.size()) current_token = tokens[pos];
+}
+
+void Parser::error(const std::string& msg) {
+    throw std::runtime_error("Line " + std::to_string(current_token.line) +
+                             ", Col " + std::to_string(current_token.col) + ": " + msg);
 }
 
 std::shared_ptr<Node> Parser::factor() {
@@ -22,7 +28,7 @@ std::shared_ptr<Node> Parser::factor() {
         advance();
         return std::make_shared<StringNode>(value);
     } else if (current_token.type == TokenType::BOOL) {
-        bool value = (current_token.value == "true");
+        bool value = (current_token.value == "legit");
         advance();
         return std::make_shared<BoolNode>(value);
     } else if (current_token.type == TokenType::IDENTIFIER) {
@@ -33,44 +39,76 @@ std::shared_ptr<Node> Parser::factor() {
         advance();
         auto node = expr();
         if (current_token.type != TokenType::RPAREN)
-            throw std::runtime_error("Expected )");
+            error("Expected )");
         advance();
         return node;
     }
-    throw std::runtime_error("Invalid Factor");
+    error("Invalid Factor");
+    return nullptr;
+}
+
+std::shared_ptr<Node> Parser::unary() {
+    if (current_token.type == TokenType::MINUS) {
+        advance();
+        return std::make_shared<UnaryOpNode>("-", unary());
+    }
+    if (current_token.type == TokenType::NOT) {
+        advance();
+        return std::make_shared<UnaryOpNode>("!", unary());
+    }
+    return factor();
 }
 
 std::shared_ptr<Node> Parser::term() {
-    auto node = factor();
+    auto node = unary();
     while (current_token.type == TokenType::MUL || current_token.type == TokenType::DIV) {
         std::string op = current_token.value;
         advance();
-        node = std::make_shared<BinOpNode>(node, op, factor());
+        node = std::make_shared<BinOpNode>(node, op, unary());
     }
     return node;
 }
 
-std::shared_ptr<Node> Parser::expr() {
+std::shared_ptr<Node> Parser::additive() {
     auto node = term();
-
-    // + and -
     while (current_token.type == TokenType::PLUS || current_token.type == TokenType::MINUS) {
         std::string op = current_token.value;
         advance();
         node = std::make_shared<BinOpNode>(node, op, term());
     }
+    return node;
+}
 
-    // >, <, >=, <=, ==, !=
+std::shared_ptr<Node> Parser::comparison() {
+    auto node = additive();
     while (current_token.type == TokenType::GT || current_token.type == TokenType::LT ||
            current_token.type == TokenType::GE || current_token.type == TokenType::LE ||
            current_token.type == TokenType::EQ || current_token.type == TokenType::NE) {
-
         std::string op = current_token.value;
         advance();
-        auto right = term();
+        auto right = additive();
         node = std::make_shared<BinOpNode>(node, op, right);
     }
+    return node;
+}
 
+std::shared_ptr<Node> Parser::and_expr() {
+    auto node = comparison();
+    while (current_token.type == TokenType::AND) {
+        advance();
+        auto right = comparison();
+        node = std::make_shared<BinOpNode>(node, "&&", right);
+    }
+    return node;
+}
+
+std::shared_ptr<Node> Parser::expr() {
+    auto node = and_expr();
+    while (current_token.type == TokenType::OR) {
+        advance();
+        auto right = and_expr();
+        node = std::make_shared<BinOpNode>(node, "||", right);
+    }
     return node;
 }
 
@@ -82,58 +120,89 @@ std::vector<std::shared_ptr<Node>> Parser::parse() {
     return instructions;
 }
 
+std::vector<std::shared_ptr<Node>> Parser::parse_block() {
+    std::vector<std::shared_ptr<Node>> body;
+    while (current_token.type != TokenType::RBRACE) {
+        if (current_token.type == TokenType::END_OF_FILE)
+            error("Expected }");
+        body.push_back(parse_statement());
+    }
+    advance();
+    return body;
+}
+
 std::shared_ptr<Node> Parser::parse_statement() {
-    // Declaração de variável (omae wa variavel = valor)
-    if (current_token.type == TokenType::OMAE) {
+    // Variable declaration (ur name = value)
+    if (current_token.type == TokenType::UR) {
         advance();
-        if (current_token.type != TokenType::WA) throw std::runtime_error("Expected 'wa' after 'omae'");
-        advance();
-        
-        if (current_token.type != TokenType::IDENTIFIER) throw std::runtime_error("Expected identifier");
+        if (current_token.type != TokenType::IDENTIFIER) error("Expected identifier after 'ur'");
         std::string var_name = current_token.value;
         advance();
-        
-        if (current_token.type != TokenType::ASSIGN) throw std::runtime_error("Expected =");
+
+        if (current_token.type != TokenType::ASSIGN) error("Expected =");
         advance();
-        
+
         auto value = expr();
         return std::make_shared<AssignNode>(var_name, value);
-    } 
-    // Reatribuição (variavel = valor)
+    }
+    // Reassignment (name = value)
     else if (current_token.type == TokenType::IDENTIFIER) {
         std::string var_name = current_token.value;
         advance();
-        if (current_token.type != TokenType::ASSIGN)
-            throw std::runtime_error("Expected =");
+        if (current_token.type != TokenType::ASSIGN) error("Expected =");
         advance();
         auto value = expr();
         return std::make_shared<AssignNode>(var_name, value);
     } else if (current_token.type == TokenType::SHOW) {
         advance();
-        if (current_token.type != TokenType::LPAREN) throw std::runtime_error("Expected ( after show");
+        if (current_token.type != TokenType::LPAREN) error("Expected ( after show");
         advance();
         auto value = expr();
-        if (current_token.type != TokenType::RPAREN) throw std::runtime_error("Expected )");
+        if (current_token.type != TokenType::RPAREN) error("Expected )");
         advance();
         return std::make_shared<ShowNode>(value);
     } else if (current_token.type == TokenType::WONDERING) {
         advance();
-        if (current_token.type != TokenType::LPAREN) throw std::runtime_error("Expected ( after 'wondering'");
+        if (current_token.type != TokenType::LPAREN) error("Expected ( after 'wondering'");
         advance();
         auto cond = expr();
-        if (current_token.type != TokenType::RPAREN) throw std::runtime_error("Expected ) after condition");
+        if (current_token.type != TokenType::RPAREN) error("Expected ) after condition");
         advance();
 
-        if (current_token.type != TokenType::LBRACE) throw std::runtime_error("Expected { after 'wondering' condition");
+        if (current_token.type != TokenType::LBRACE) error("Expected { after 'wondering' condition");
         advance();
 
-        std::vector<std::shared_ptr<Node>> body_nodes;
-        while (current_token.type != TokenType::RBRACE)
-            body_nodes.push_back(parse_statement());
+        auto body = parse_block();
 
-        advance();
-        return std::make_shared<WonderingNode>(cond, body_nodes);
+        std::vector<std::pair<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>>> else_ifs;
+        while (current_token.type == TokenType::ACTUALLY) {
+            advance();
+            if (current_token.type != TokenType::LPAREN) error("Expected ( after 'actually'");
+            advance();
+            auto else_cond = expr();
+            if (current_token.type != TokenType::RPAREN) error("Expected ) after 'actually' condition");
+            advance();
+            if (current_token.type != TokenType::LBRACE) error("Expected { after 'actually' condition");
+            advance();
+            else_ifs.push_back({else_cond, parse_block()});
+        }
+
+        std::vector<std::shared_ptr<Node>> else_body;
+        if (current_token.type == TokenType::NAH) {
+            advance();
+            if (current_token.type != TokenType::LBRACE) error("Expected { after 'nah'");
+            advance();
+            else_body = parse_block();
+        }
+
+        // Build the else-if chain from the last branch backwards.
+        for (int i = static_cast<int>(else_ifs.size()) - 1; i >= 0; i--) {
+            else_body = { std::make_shared<WonderingNode>(else_ifs[i].first, else_ifs[i].second, else_body) };
+        }
+
+        return std::make_shared<WonderingNode>(cond, body, else_body);
     } else {
-        throw std::runtime_error("Invalid Statement");
+        error("Invalid Statement");
     }
+    return nullptr;
 }

@@ -12,6 +12,10 @@
 *.user
 *.swp
 
+# Web
+/web/
+aya.js
+
 # OS files
 .DS_Store
 Thumbs.db

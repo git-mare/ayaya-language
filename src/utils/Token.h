@@ -14,8 +14,12 @@ enum class TokenType {
     ASSIGN,
     SHOW,
     WONDERING,
-    OMAE,
-    WA,
+    UR,
+    NAH,
+    ACTUALLY,
+    AND,
+    OR,
+    NOT,
     LPAREN,
     RPAREN,
     LBRACE,
@@ -32,6 +36,9 @@ enum class TokenType {
 struct Token {
     TokenType type;
     std::string value;
+    int line;
+    int col;
 
-    Token(TokenType t, const std::string& v) : type(t), value(v) {}
+    Token(TokenType t, const std::string& v, int l = 0, int c = 0)
+        : type(t), value(v), line(l), col(c) {}
 };

@@ -18,11 +18,11 @@
       "patterns": [
         {
           "name": "keyword.control.aya",
-          "match": "\\b(omae|wa|wondering|show)\\b"
+          "match": "\\b(ur|wondering|actually|nah|show)\\b"
         },
         {
           "name": "constant.language.boolean.aya",
-          "match": "\\b(true|false)\\b"
+          "match": "\\b(legit|sus)\\b"
         }
       ]
     },

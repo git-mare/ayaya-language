@@ -1,13 +1,24 @@
 #include "Lexer.h"
 #include <cctype>
+#include <stdexcept>
 
-Lexer::Lexer(const std::string& input) : text(input), pos(0) {
+Lexer::Lexer(const std::string& input) : text(input), pos(0), line(1), col(1) {
     current_char = text.empty() ? '\0' : text[pos];
 }
 
 void Lexer::advance() {
+    if (current_char == '\n') {
+        line++;
+        col = 1;
+    } else {
+        col++;
+    }
     pos++;
     current_char = (pos < text.size()) ? text[pos] : '\0';
+}
+
+void Lexer::error(const std::string& msg) {
+    throw std::runtime_error("Line " + std::to_string(line) + ", Col " + std::to_string(col) + ": " + msg);
 }
 
 void Lexer::skip_whitespace() {
@@ -28,7 +39,9 @@ std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
 
     while (current_char != '\0') {
-        
+        int start_line = line;
+        int start_col = col;
+
         if (current_char == '/' && pos + 1 < text.size() && text[pos + 1] == '/') {
             while (current_char != '\0' && current_char != '\n') advance();
             continue;
@@ -41,18 +54,19 @@ std::vector<Token> Lexer::tokenize() {
 
         // Strings
         if (current_char == '"') {
-            advance(); // pula a primeira aspa
+            advance();
             std::string str;
             while (current_char != '\0' && current_char != '"') {
                 str += current_char;
                 advance();
             }
-            if (current_char == '"') advance(); // pula a última aspa
-            tokens.push_back(Token(TokenType::STRING, str));
+            if (current_char == '\0') error("Unterminated string");
+            advance();
+            tokens.push_back(Token(TokenType::STRING, str, start_line, start_col));
             continue;
         }
 
-        // Números (Inteiros e Decimais)
+        // Numbers (integers and decimals)
         if (isdigit(current_char)) {
             std::string num;
             bool has_dot = false;
@@ -64,17 +78,17 @@ std::vector<Token> Lexer::tokenize() {
                 num += current_char;
                 advance();
             }
-            if (has_dot) tokens.push_back(Token(TokenType::FLOAT, num));
-            else tokens.push_back(Token(TokenType::NUMBER, num));
+            if (has_dot) tokens.push_back(Token(TokenType::FLOAT, num, start_line, start_col));
+            else tokens.push_back(Token(TokenType::NUMBER, num, start_line, start_col));
             continue;
         }
-        
+
         if (current_char == '>') {
             if (pos + 1 < text.size() && text[pos + 1] == '=') {
-                tokens.push_back(Token(TokenType::GE, ">="));
+                tokens.push_back(Token(TokenType::GE, ">=", start_line, start_col));
                 advance();
             } else {
-                tokens.push_back(Token(TokenType::GT, ">"));
+                tokens.push_back(Token(TokenType::GT, ">", start_line, start_col));
             }
             advance();
             continue;
@@ -82,10 +96,10 @@ std::vector<Token> Lexer::tokenize() {
 
         if (current_char == '<') {
             if (pos + 1 < text.size() && text[pos + 1] == '=') {
-                tokens.push_back(Token(TokenType::LE, "<="));
+                tokens.push_back(Token(TokenType::LE, "<=", start_line, start_col));
                 advance();
             } else {
-                tokens.push_back(Token(TokenType::LT, "<"));
+                tokens.push_back(Token(TokenType::LT, "<", start_line, start_col));
             }
             advance();
             continue;
@@ -93,10 +107,10 @@ std::vector<Token> Lexer::tokenize() {
 
         if (current_char == '=') {
             if (pos + 1 < text.size() && text[pos + 1] == '=') {
-                tokens.push_back(Token(TokenType::EQ, "=="));
+                tokens.push_back(Token(TokenType::EQ, "==", start_line, start_col));
                 advance();
             } else {
-                tokens.push_back(Token(TokenType::ASSIGN, "="));
+                tokens.push_back(Token(TokenType::ASSIGN, "=", start_line, start_col));
             }
             advance();
             continue;
@@ -104,39 +118,68 @@ std::vector<Token> Lexer::tokenize() {
 
         if (current_char == '!') {
             if (pos + 1 < text.size() && text[pos + 1] == '=') {
-                tokens.push_back(Token(TokenType::NE, "!="));
+                tokens.push_back(Token(TokenType::NE, "!=", start_line, start_col));
+                advance();
+                advance();
+            } else {
+                tokens.push_back(Token(TokenType::NOT, "!", start_line, start_col));
                 advance();
             }
-            advance();
+            continue;
+        }
+
+        if (current_char == '&') {
+            if (pos + 1 < text.size() && text[pos + 1] == '&') {
+                tokens.push_back(Token(TokenType::AND, "&&", start_line, start_col));
+                advance();
+                advance();
+            } else {
+                error("Unexpected '&'. Did you mean '&&'?");
+            }
+            continue;
+        }
+
+        if (current_char == '|') {
+            if (pos + 1 < text.size() && text[pos + 1] == '|') {
+                tokens.push_back(Token(TokenType::OR, "||", start_line, start_col));
+                advance();
+                advance();
+            } else {
+                error("Unexpected '|'. Did you mean '||'?");
+            }
             continue;
         }
 
         if (isalpha(current_char) || current_char == '_') {
             std::string id = identifier();
-            if (id == "show") tokens.push_back(Token(TokenType::SHOW, id));
-            else if (id == "wondering") tokens.push_back(Token(TokenType::WONDERING, id));
-            else if (id == "omae") tokens.push_back(Token(TokenType::OMAE, id));
-            else if (id == "wa") tokens.push_back(Token(TokenType::WA, id));
-            else if (id == "true" || id == "false") tokens.push_back(Token(TokenType::BOOL, id));
-            else tokens.push_back(Token(TokenType::IDENTIFIER, id));
+            TokenType type;
+            if (id == "show") type = TokenType::SHOW;
+            else if (id == "wondering") type = TokenType::WONDERING;
+            else if (id == "ur") type = TokenType::UR;
+            else if (id == "nah") type = TokenType::NAH;
+            else if (id == "actually") type = TokenType::ACTUALLY;
+            else if (id == "legit" || id == "sus") type = TokenType::BOOL;
+            else type = TokenType::IDENTIFIER;
+            tokens.push_back(Token(type, id, start_line, start_col));
             continue;
         }
 
         switch (current_char) {
-            case '+': tokens.push_back(Token(TokenType::PLUS, "+")); break;
-            case '-': tokens.push_back(Token(TokenType::MINUS, "-")); break;
-            case '*': tokens.push_back(Token(TokenType::MUL, "*")); break;
-            case '/': tokens.push_back(Token(TokenType::DIV, "/")); break;
-            case '(': tokens.push_back(Token(TokenType::LPAREN, "(")); break;
-            case ')': tokens.push_back(Token(TokenType::RPAREN, ")")); break;
-            case '{': tokens.push_back(Token(TokenType::LBRACE, "{")); break;
-            case '}': tokens.push_back(Token(TokenType::RBRACE, "}")); break;
-            default: break;
+            case '+': tokens.push_back(Token(TokenType::PLUS, "+", start_line, start_col)); break;
+            case '-': tokens.push_back(Token(TokenType::MINUS, "-", start_line, start_col)); break;
+            case '*': tokens.push_back(Token(TokenType::MUL, "*", start_line, start_col)); break;
+            case '/': tokens.push_back(Token(TokenType::DIV, "/", start_line, start_col)); break;
+            case '(': tokens.push_back(Token(TokenType::LPAREN, "(", start_line, start_col)); break;
+            case ')': tokens.push_back(Token(TokenType::RPAREN, ")", start_line, start_col)); break;
+            case '{': tokens.push_back(Token(TokenType::LBRACE, "{", start_line, start_col)); break;
+            case '}': tokens.push_back(Token(TokenType::RBRACE, "}", start_line, start_col)); break;
+            default:
+                error(std::string("Unexpected character '") + current_char + "'");
         }
 
         advance();
     }
 
-    tokens.push_back(Token(TokenType::END_OF_FILE, ""));
+    tokens.push_back(Token(TokenType::END_OF_FILE, "", line, col));
     return tokens;
 }

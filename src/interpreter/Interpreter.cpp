@@ -23,7 +23,7 @@ std::string get_string(const AyayaValue& v) {
         if (str.back() == '.') str.pop_back(); // Remove the dot if it is an integer, e.g., "15." -> "15"
         return str;
     }
-    if (auto p = std::get_if<bool>(&v)) return *p ? "true" : "false";
+    if (auto p = std::get_if<bool>(&v)) return *p ? "legit" : "sus";
     return "";
 }
 
@@ -57,8 +57,31 @@ AyayaValue Interpreter::eval(std::shared_ptr<Node> node) {
         return val; 
     }
     
+    // Unary operations
+    if (auto u = dynamic_cast<UnaryOpNode*>(node.get())) {
+        AyayaValue v = eval(u->operand);
+        if (u->op == "-") {
+            if (std::holds_alternative<int>(v)) return -std::get<int>(v);
+            return -get_num(v);
+        }
+        if (u->op == "!") {
+            return !is_truthy(v);
+        }
+        throw std::runtime_error("Invalid unary operator: " + u->op);
+    }
+
     // Binary Operations
     if (auto b = dynamic_cast<BinOpNode*>(node.get())) {
+        // Logical operators with short-circuit evaluation
+        if (b->op == "&&") {
+            if (!is_truthy(eval(b->left))) return false;
+            return is_truthy(eval(b->right));
+        }
+        if (b->op == "||") {
+            if (is_truthy(eval(b->left))) return true;
+            return is_truthy(eval(b->right));
+        }
+
         AyayaValue l = eval(b->left);
         AyayaValue r = eval(b->right);
 
@@ -68,7 +91,7 @@ AyayaValue Interpreter::eval(std::shared_ptr<Node> node) {
                 return get_string(l) + get_string(r);
             }
         }
-        
+
         // Numeric vs String Equality
         if (b->op == "==") {
             if (std::holds_alternative<std::string>(l) || std::holds_alternative<std::string>(r))
@@ -81,6 +104,14 @@ AyayaValue Interpreter::eval(std::shared_ptr<Node> node) {
             return get_num(l) != get_num(r);
         }
 
+        // Division always produces a decimal result
+        if (b->op == "/") {
+            double num_l = get_num(l);
+            double num_r = get_num(r);
+            if (num_r == 0.0) throw std::runtime_error("Division by zero");
+            return num_l / num_r;
+        }
+
         // Check if both are integers to keep the primitive type intact
         bool both_ints = std::holds_alternative<int>(l) && std::holds_alternative<int>(r);
 
@@ -90,10 +121,6 @@ AyayaValue Interpreter::eval(std::shared_ptr<Node> node) {
             if (b->op == "+") return num_l + num_r;
             if (b->op == "-") return num_l - num_r;
             if (b->op == "*") return num_l * num_r;
-            if (b->op == "/") {
-                if (num_r == 0) throw std::runtime_error("Division by zero");
-                return num_l / num_r; 
-            }
             if (b->op == ">") return num_l > num_r;
             if (b->op == "<") return num_l < num_r;
             if (b->op == ">=") return num_l >= num_r;
@@ -105,10 +132,6 @@ AyayaValue Interpreter::eval(std::shared_ptr<Node> node) {
             if (b->op == "+") return num_l + num_r;
             if (b->op == "-") return num_l - num_r;
             if (b->op == "*") return num_l * num_r;
-            if (b->op == "/") {
-                if (num_r == 0.0) throw std::runtime_error("Division by zero");
-                return num_l / num_r;
-            }
             if (b->op == ">") return num_l > num_r;
             if (b->op == "<") return num_l < num_r;
             if (b->op == ">=") return num_l >= num_r;
@@ -121,6 +144,10 @@ AyayaValue Interpreter::eval(std::shared_ptr<Node> node) {
     if (auto w = std::dynamic_pointer_cast<WonderingNode>(node)) {
         if (is_truthy(eval(w->condition))) {
             for (auto& n : w->body) {
+                eval(n);
+            }
+        } else if (!w->else_body.empty()) {
+            for (auto& n : w->else_body) {
                 eval(n);
             }
         }

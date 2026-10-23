@@ -12,3 +12,14 @@ wondering (y < x) {
 wondering (x + y == 15) {
     show(x + y)
 }
+
+// Comparison with arithmetic on the right side (precedence fix)
+wondering (x == 5 + 5) {
+    show("precedence ok")
+}
+
+wondering (x < y) {
+    show("not shown")
+} nah {
+    show("else works")
+}

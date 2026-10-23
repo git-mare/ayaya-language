@@ -1,29 +1,22 @@
 // Defining the values and the desired operation
-omae wa num1 = 15.5
-omae wa num2 = 4
-omae wa operation = "*"
+ur num1 = 15.5
+ur num2 = 4
+ur operation = "*"
 
-omae wa result = 0
+ur result = 0
 
 // Calculator logic
 wondering (operation == "+") {
     result = num1 + num2
-}
-
-wondering (operation == "-") {
+} actually (operation == "-") {
     result = num1 - num2
-}
-
-wondering (operation == "*") {
+} actually (operation == "*") {
     result = num1 * num2
-}
-
-wondering (operation == "/") {
+} actually (operation == "/") {
     // Prevent division by zero
     wondering (num2 != 0) {
         result = num1 / num2
-    }
-    wondering (num2 == 0) {
+    } nah {
         show("Error: Division by zero!")
     }
 }
