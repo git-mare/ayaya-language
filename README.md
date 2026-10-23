@@ -41,7 +41,7 @@ Comparison between popular programming languages and Ayaya Language:
 | Variable Assignment | `x = 20` | `x = 20` |
 | Boolean Values | `True` / `False` | `legit` / `sus` |
 | Logical AND | `&&` | `&&` |
-| Logical OR | `||` | `||` |
+| Logical OR | &#124;&#124; | &#124;&#124; |
 | Logical NOT | `!` | `!` |
 
 ## Plus Content
